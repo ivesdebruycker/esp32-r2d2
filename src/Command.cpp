@@ -1,93 +1,72 @@
-#include "Arduino.h"
+#include <vector> // Include the vector header
 #include "Commands.h"
 
 Commands::Commands()
 {
 }
 
-std::vector<char> Commands::generateCommand(char TID, DeviceId DID, char CID, char SEQ, char DLEN, ...) {
-  short i=0;
-  char sum=0, data;
-  va_list args;
-  
-  // Calculate checksum
-  sum = TID + char(DID) + CID + SEQ;
-
-  int cnter=5;
-  char yyy[cnter+DLEN + 2];
-  yyy[0]= char(SOP);
-  yyy[1]= char(TID);
-  yyy[2]= char(DID);
-  yyy[3]= char(CID);
-  yyy[4]= char(SEQ);
-
-  va_start(args, DLEN);
-  for(; i<DLEN; i++){
-      data = va_arg(args, int);
-      yyy[cnter]=data;
-      cnter+=1;
-      sum += data;
-  }
-  va_end(args);
-
-  yyy[cnter]= char(~sum) ;
-  yyy[cnter + 1]= char(EOP);
-  
-  Serial.print("SOP\tTID\tDID\tCID\tSEQ");
-  for(i=0; i<DLEN; i++){
-      Serial.print("\tD");
-      Serial.print(i);
-    }
-    Serial.println("\tCHK\tEOP");
-  
-  for(i=0; i<sizeof(yyy); i++){
-      Serial.print("0x");
-      Serial.print((unsigned char)yyy[i] < 0xa0 ? "0" : "");
-    Serial.print((unsigned char)yyy[i], HEX);
-      Serial.print("\t");
-    }
-  Serial.println();
-  Serial.println();
-
-  int n = sizeof(yyy) / sizeof(yyy[0]); 
-  return std::vector<char> (yyy, yyy + n); 
+std::vector<uint8_t> Commands::on()
+{
+  uint8_t onMsg[] = {5, 0, 7, 1, 1};
+  return std::vector<uint8_t>(onMsg, onMsg + 5);
 }
 
-
-std::vector<char> Commands::wake() {
-  return this->generateCommand(0x0A, DeviceId::powerInfo, 0x0D, this->seq++, 0);
+std::vector<uint8_t> Commands::off()
+{
+  uint8_t offMsg[] = {5, 0, 7, 1, 0};
+  return std::vector<uint8_t>(offMsg, offMsg + 5);
 }
 
-std::vector<char> Commands::sleep() {
-  return this->generateCommand(0x0A, DeviceId::powerInfo, 0x01, this->seq++, 0);
+std::vector<uint8_t> Commands::setPixel(int x, int y, int r, int g, int b)
+{
+  uint8_t setPixelMsg[] = {
+      10, 0, 5, 1, 0,
+      r % 256,
+      g % 256,
+      b % 256,
+      x % 32,
+      y % 32};
+
+  return std::vector<uint8_t>(setPixelMsg, setPixelMsg + 10);
 }
 
-std::vector<char> Commands::setVolume(char vol) {
-  return this->generateCommand(0x0A, DeviceId::userIO, 0x08, this->seq++, 1, vol);
+std::vector<uint8_t> Commands::clock(int style, bool visibleDate, bool hour24, int r, int g, int b)
+{
+  uint8_t clockMsg[] = {
+      8,
+      0,
+      6,
+      1,
+      ((style % 7) | (visibleDate ? 128 : 0)) | (hour24 ? 64 : 0),
+      r % 256,
+      g % 256,
+      b % 256,
+  };
+  return std::vector<uint8_t>(clockMsg, clockMsg + 8);
 }
 
-std::vector<char> Commands::generateSetR2D2HoloProjectorIntensity(char vol) {
-  return this->generateCommand(0x0A, DeviceId::userIO, 0x0e, this->seq++, 3, 0x00, 0x80, vol);
+// Set screen brightness. Range 5-100 (%)
+std::vector<uint8_t> Commands::setBrightness(int brightnessPct)
+{
+  uint8_t brightnessMsg[] = {
+      5,
+      0,
+      4,
+      128,
+      brightnessPct % 100,
+  };
+  return std::vector<uint8_t>(brightnessMsg, brightnessMsg + 5);
 }
 
-std::vector<char> Commands::generatePlayR2D2Sound(char d0, char d1) {
-  return this->generateCommand(0x0A, DeviceId::userIO, 0x07, this->seq++, 3, d0, d1, 0x00);
-}
-
-std::vector<char> Commands::generatePlayR2D2Sound(int id) {
-  int d0 = id >> 8;
-  int d1 = id & 0xff;
-  return this->generateCommand(0x0A, DeviceId::userIO, 0x07, this->seq++, 3, d0, d1, 0x00);
-}
-
-std::vector<char> Commands::generatePlayAnimation(char id) {
-  return this->generateCommand(0x0A, DeviceId::animatronics, 0x05, this->seq++, 2, 0x00, id);
-}
-
-std::vector<char> Commands::setR2D2LogicDisplaysIntensity(char val) {
-  return this->generateCommand(0x0A, DeviceId::userIO, 0x0E, this->seq++, 3, 0x00, 0x08, val);
-}
-
-std::vector<char> Commands::setR2D2LEDColor(char r, char g, char b) {
-  return this->generateCommand(0x0A, DeviceId::userIO, 0x0E, this->seq++, 8, 0x00, 0x77, r, g, b, r, g, b);
+// Set draw mode
+std::vector<uint8_t> Commands::setDrawMode(int drawMode)
+{
+  uint8_t msg[] = {
+      5,
+      0,
+      4,
+      1,
+      drawMode % 256,
+  };
+  return std::vector<uint8_t>(msg, msg + 5);
 }

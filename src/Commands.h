@@ -3,7 +3,8 @@
 
 #include <string>
 
-enum class DeviceId {
+enum class DeviceId
+{
   apiProcessor = 0x10,
   systemInfo = 0x11,
   powerInfo = 0x13,
@@ -16,23 +17,20 @@ enum class DeviceId {
 
 class Commands
 {
-  public:
-    Commands();
-    std::vector<char> generateCommand(char TID, DeviceId DID, char CID, char SEQ, char DLEN, ...);
-    std::vector<char> wake();
-    std::vector<char> sleep();
-    std::vector<char> setVolume(char vol);
-    std::vector<char> generateSetR2D2HoloProjectorIntensity(char vol);
-    std::vector<char> generatePlayR2D2Sound(int id);
-    std::vector<char> generatePlayR2D2Sound(char d0, char d1);
-    std::vector<char> generatePlayAnimation(char id);
-    std::vector<char> setR2D2LogicDisplaysIntensity(char val);
-    std::vector<char> setR2D2LEDColor(char r, char g, char b);
+public:
+  Commands();
+  std::vector<char> generateCommand(char TID, DeviceId DID, char CID, char SEQ, char DLEN, ...);
+  std::vector<uint8_t> on();
+  std::vector<uint8_t> off();
+  std::vector<uint8_t> setPixel(int x, int y, int r, int g, int b);
+  std::vector<uint8_t> clock(int style, bool visibleDate, bool hour24, int r, int g, int b);
+  std::vector<uint8_t> setBrightness(int brightnessPct);
+  std::vector<uint8_t> setDrawMode(int drawMode);
 
-  private:
-    char SOP = 0x8D;
-    char EOP = 0xD8;
-    int seq = 0;
+private:
+  char SOP = 0x8D;
+  char EOP = 0xD8;
+  int seq = 0;
 };
 
 #endif
